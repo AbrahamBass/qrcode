@@ -24,6 +24,8 @@ async def whatsapp(phone: int, message: str):
     return await QrController.Whatsapp(phone, message)
 
 
-@router.get("/image")
-async def image(file: UploadFile = File(...)):
-    return await QrController.Image(file)
+@router.get("/read")
+async def read(file: UploadFile = File(...)):
+    return await QrController.Read(file)
+
+

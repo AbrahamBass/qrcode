@@ -1,101 +1,90 @@
-import base64
+import cv2
+import tempfile
+from pyzbar.pyzbar import decode
 from io import BytesIO
+from qrcode.main import QRCode
+from qrcode.image.base import BaseImage
 from src.instances.qr_instance import Run
 from qrcode.image.styledpil import StyledPilImage
 from qrcode.image.styles.colormasks import RadialGradiantColorMask
-from fastapi.responses import StreamingResponse
-from fastapi import UploadFile
+from fastapi.responses import StreamingResponse, PlainTextResponse
+from fastapi import UploadFile, HTTPException
 
 
-def ResponseQr():
-    pass
+def QrResponse(qr: QRCode[BaseImage]):
+    try:
+        img = qr.make_image(
+            image_factory=StyledPilImage,
+            color_mask=RadialGradiantColorMask()
+        )
+
+        img_bytes_io = BytesIO()
+        img.save(img_bytes_io, format='PNG')
+        img_bytes_io.seek(0)
+
+        return StreamingResponse(img_bytes_io, media_type="image/png")
+    except:
+        raise Exception('Error creating the QR image')
 
 
 class QrController:
 
     @staticmethod
     async def Link(website: str):
-        qr = Run()
-        qr.add_data(website)
+        try:
+            qr = Run()
+            qr.add_data(website)
 
-        img = qr.make_image(
-            image_factory=StyledPilImage,
-            color_mask=RadialGradiantColorMask()
-        )
-
-        img_bytes_io = BytesIO()
-        img.save(img_bytes_io, format='PNG')
-        img_bytes_io.seek(0)
-
-        return StreamingResponse(img_bytes_io, media_type="image/png")
+            return QrResponse(qr)
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=e.args)
 
     @staticmethod
     async def Email(to: str, sub: str, body: str):
-        qr = Run()
-        qr.add_data(f"MATMSG:TO:{to};SUB:{sub};BODY:{body};;")
+        try:
+            qr = Run()
+            qr.add_data(f"MATMSG:TO:{to};SUB:{sub};BODY:{body};;")
 
-        img = qr.make_image(
-            image_factory=StyledPilImage,
-            color_mask=RadialGradiantColorMask()
-        )
-
-        img_bytes_io = BytesIO()
-        img.save(img_bytes_io, format='PNG')
-        img_bytes_io.seek(0)
-
-        return StreamingResponse(img_bytes_io, media_type="image/png")
+            return QrResponse(qr)
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=e.args)
 
     @staticmethod
     async def Text(message: str):
-        qr = Run()
-        qr.add_data(message)
+        try:
+            qr = Run()
+            qr.add_data(message)
 
-        img = qr.make_image(
-            image_factory=StyledPilImage,
-            color_mask=RadialGradiantColorMask()
-        )
-
-        img_bytes_io = BytesIO()
-        img.save(img_bytes_io, format='PNG')
-        img_bytes_io.seek(0)
-
-        return StreamingResponse(img_bytes_io, media_type="image/png")
+            return QrResponse(qr)
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=e.args)
 
     @staticmethod
     async def Whatsapp(phone: int, message: str):
-        qr = Run()
-        qr.add_data(f"https://wa.me/{phone}/?text={message}")
+        try:
+            qr = Run()
+            qr.add_data(f"https://wa.me/{phone}/?text={message}")
 
-        img = qr.make_image(
-            image_factory=StyledPilImage,
-            color_mask=RadialGradiantColorMask()
-        )
-
-        img_bytes_io = BytesIO()
-        img.save(img_bytes_io, format='PNG')
-        img_bytes_io.seek(0)
-
-        return StreamingResponse(img_bytes_io, media_type="image/png")
+            return QrResponse(qr)
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=e.args)
 
     @staticmethod
-    async def Image(file: UploadFile):
-        image_bytes = await file.read()
+    async def Read(file: UploadFile):
 
-        image_base64 = base64.b64encode(image_bytes).decode()
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            temp_file_path = tmp.name
+            content = await file.read()
+            tmp.write(content)
 
-        qr_content = f"data:image/jpeg;base64,{image_base64}"
+        image = cv2.imread(temp_file_path)
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        qr = Run()
-        qr.add_data(qr_content)
-        qr.make(fit=True)
+        decode_objects = decode(gray_image)
 
-        img = qr.make_image(
-            image_factory=StyledPilImage,
-            color_mask=RadialGradiantColorMask()
-        )
-
-        img_bytes_io = BytesIO()
-        img.save(img_bytes_io, format='PNG')
-        img_bytes_io.seek(0)
-
-        return StreamingResponse(img_bytes_io, media_type="image/png")
+        if decode_objects:
+            for obj in decode_objects:
+                data = obj.data.decode('utf-8')
+                return PlainTextResponse(content=data)
+        else:
+            raise HTTPException(status_code=404, detail="Item not found")

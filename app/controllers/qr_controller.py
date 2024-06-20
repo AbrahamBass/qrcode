@@ -1,6 +1,6 @@
-import cv2
-import tempfile
 from pyzbar.pyzbar import decode
+import tempfile
+from PIL import Image
 from io import BytesIO
 from qrcode.main import QRCode
 from qrcode.image.base import BaseImage
@@ -77,14 +77,12 @@ class QrController:
             content = await file.read()
             tmp.write(content)
 
-        image = cv2.imread(temp_file_path)
-        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        image = Image.open(temp_file_path)
 
-        decode_objects = decode(gray_image)
+        decoded_objects = decode(image)
 
-        if decode_objects:
-            for obj in decode_objects:
-                data = obj.data.decode('utf-8')
-                return PlainTextResponse(content=data)
-        else:
-            raise HTTPException(status_code=404, detail="Item not found")
+        if decoded_objects:
+            data = decoded_objects[0].data.decode('utf-8')
+            return data
+
+        raise HTTPException(status_code=422, detail="QR code not found")

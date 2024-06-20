@@ -9,3 +9,5 @@ app.include_router(qr_route.router)
 app.add_middleware(RateLimiterMiddleware)
 
 
+
+

@@ -1,11 +1,13 @@
-FROM python:3.9
+FROM python:3.9-slim
 
-WORKDIR /code
+RUN apt-get update -y
+RUN apt-get install -y libzbar0
 
-COPY ./requirements.txt /code/requirements.txt
+WORKDIR /app
 
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ./app /code/app
+COPY . .  
 
 CMD ["fastapi", "run", "app/main.py", "--port", "80"]

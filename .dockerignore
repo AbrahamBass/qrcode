@@ -3,3 +3,5 @@ __pycache__/
 
 # Ignorar archivos de bytecode de Python
 *.py[cod]
+
+.venv

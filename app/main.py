@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.v1.routes import qr_route
+from app.v1.routers import qr_route
 from app.middleware.limiter_middleware import RateLimiterMiddleware
 
 

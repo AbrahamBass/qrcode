@@ -20,12 +20,17 @@ async def text(message: str):
 
 
 @router.get("/whatsapp")
-async def whatsapp(phone: int, message: str):
+async def whatsapp(
+    phone: int, 
+    message: str
+):
     return await QrController.Whatsapp(phone, message)
 
 
 @router.get("/read")
-async def read(file: UploadFile = File(...)):
+async def read(
+    file: UploadFile = File(...)
+):
     return await QrController.Read(file)
 
 

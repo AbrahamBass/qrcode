@@ -5,17 +5,25 @@ router = APIRouter()
 
 
 @router.get("/link")
-async def link(website: str):
+async def link(
+    website: str
+):
     return await QrController.Link(website)
 
 
 @router.get("/email")
-async def email(to: str, sub: str, body: str):
+async def email(
+    to: str, 
+    sub: str, 
+    body: str
+):
     return await QrController.Email(to, sub, body)
 
 
 @router.get("/text")
-async def text(message: str):
+async def text(
+    message: str
+):
     return await QrController.Text(message)
 
 
